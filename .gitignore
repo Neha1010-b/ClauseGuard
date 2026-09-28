@@ -1,0 +1,58 @@
+# ===== Python =====
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+dist/
+*.egg-info/
+.eggs/
+venv/
+.venv/
+env/
+ENV/
+
+# ===== ML / Data =====
+# Never commit data — huge and may be sensitive
+data/raw/*
+data/processed/*
+data/reference/*
+!data/**/.gitkeep
+
+# Never commit model weights — regenerable via scripts
+models/*
+!models/.gitkeep
+
+# HuggingFace cache if you place it in-project
+.cache/
+*.pt
+*.bin
+*.safetensors
+*.onnx
+
+# ===== Notebooks =====
+.ipynb_checkpoints/
+*.ipynb_checkpoints
+
+# ===== Environment / Secrets =====
+.env
+.env.local
+*.key
+secrets.yaml
+
+# ===== IDE / OS =====
+.vscode/
+.idea/
+*.swp
+.DS_Store
+Thumbs.db
+
+# ===== Logs =====
+*.log
+logs/
+
+# ===== Testing / Coverage =====
+.pytest_cache/
+.coverage
+htmlcov/

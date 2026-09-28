@@ -1,0 +1,100 @@
+# ============================================================
+# Contract Clause Risk Analyzer — Master Configuration
+# ============================================================
+# RULE: Nothing in the codebase should hardcode these values.
+# All modules load this file at startup.
+# ============================================================
+
+project:
+  name: "Contract Clause Risk Analyzer"
+  version: "0.1.0"
+  author: "Your Name"
+  random_seed: 42          # For reproducibility
+
+# ---------- Paths ----------
+paths:
+  data_raw: "data/raw"
+  data_processed: "data/processed"
+  data_reference: "data/reference"
+  models_dir: "models"
+  logs_dir: "logs"
+  cache_dir: ".cache"
+
+# ---------- Document Ingestion ----------
+ingestion:
+  supported_formats: ["pdf", "docx", "txt"]
+  min_text_length: 100       # Reject files shorter than this
+  ocr_fallback: true         # If PDF has no text layer, try OCR
+  ocr_language: "eng"
+
+# ---------- Clause Segmentation ----------
+segmentation:
+  min_clause_length: 20      # Characters — filter noise
+  max_clause_length: 5000    # Characters — split mega-clauses
+  numbering_patterns:        # Regex patterns for clause numbering
+    - '^\d+\.\s'             # "1. "
+    - '^\d+\.\d+\s'          # "1.1 "
+    - '^Article\s+[IVXLC]+'  # "Article IV"
+    - '^Section\s+\d+'       # "Section 3"
+    - '^[A-Z][A-Z\s]{4,}$'   # ALL CAPS HEADING
+
+# ---------- NER ----------
+ner:
+  spacy_model: "en_core_web_sm"
+  entity_types: ["PERSON", "ORG", "DATE", "MONEY", "GPE", "DURATION"]
+
+# ---------- Clause Classification ----------
+classification:
+  base_model: "distilbert-base-uncased"    # Small, CPU-friendly
+  num_labels: 41                            # LEDGAR has 41 clause types
+  max_length: 256
+  batch_size: 16
+  learning_rate: 2.0e-5
+  epochs: 3
+  model_save_path: "models/clause_classifier"
+
+# ---------- Semantic Similarity ----------
+embeddings:
+  model_name: "sentence-transformers/all-MiniLM-L6-v2"  # 22M params, fast
+  embedding_dim: 384
+  similarity_threshold: 0.75    # Below this = deviation detected
+
+# ---------- Reference Bank / FAISS ----------
+reference_bank:
+  index_type: "IndexFlatL2"     # Simple, exact search
+  index_path: "models/faiss_index.bin"
+  metadata_path: "models/faiss_metadata.json"
+
+# ---------- Risk Scoring ----------
+risk:
+  thresholds:
+    low: 0.35
+    medium: 0.65
+    high: 0.85
+  weights:                       # Multi-signal weighting
+    deviation_from_reference: 0.4
+    risky_pattern_score: 0.4
+    entity_anomaly_score: 0.2
+  categories: ["Financial", "Legal", "Operational", "Ambiguity"]
+
+# ---------- RAG / Explanation ----------
+rag:
+  llm_provider: "gemini"         # "gemini" | "openai" | "ollama"
+  gemini_model: "gemini-1.5-flash"
+  max_context_chunks: 5
+  max_tokens_response: 512
+  temperature: 0.2               # Low = factual, less creative
+  # API key loaded from env var GEMINI_API_KEY (never hardcode!)
+
+# ---------- Backend API ----------
+api:
+  host: "0.0.0.0"
+  port: 8000
+  max_upload_size_mb: 20
+  request_timeout_sec: 120
+
+# ---------- Logging ----------
+logging:
+  level: "INFO"
+  format: "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
+  file: "logs/app.log"

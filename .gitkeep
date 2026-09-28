@@ -1,0 +1,4 @@
+New-Item data\raw\.gitkeep -ItemType File -Force | Out-Null
+New-Item data\processed\.gitkeep -ItemType File -Force | Out-Null
+New-Item data\reference\.gitkeep -ItemType File -Force | Out-Null
+New-Item models\.gitkeep -ItemType File -Force | Out-Null
