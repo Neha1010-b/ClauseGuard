@@ -46,17 +46,27 @@ def remove_hyphenation(text: str) -> str:
 def collapse_whitespace(text: str) -> str:
     """
     Collapse runs of spaces/tabs into one space.
-    Normalize non-breaking spaces and other unicode whitespace to regular space.
+    Handle non-breaking spaces intelligently:
+      - Between two letters  -> remove entirely (was an intra-word NBSP)
+      - Elsewhere            -> convert to regular space
     Preserve single newlines.
     """
-    # Non-breaking spaces and other exotic whitespace -> normal space
+    # Step 1: intra-word NBSP -> delete (join the two letters)
+    # \w matches [A-Za-z0-9_]; we also want to catch accented letters, so use a broader pattern
+    text = re.sub(r"(?<=\w)[\u00A0\u2007\u202F\u2009\u200A](?=\w)", "", text)
+
+    # Step 2: remaining exotic whitespace -> regular space
     text = re.sub(r"[\u00A0\u2007\u202F\u2009\u200A]", " ", text)
-    # Multiple spaces/tabs -> single space
+
+    # Step 3: multiple spaces/tabs -> single space
     text = re.sub(r"[ \t]+", " ", text)
-    # Space before newline -> remove
+
+    # Step 4: space before newline -> remove
     text = re.sub(r" +\n", "\n", text)
-    # 3+ newlines -> 2 newlines (preserve paragraph breaks, kill extra blank lines)
+
+    # Step 5: 3+ newlines -> 2 newlines
     text = re.sub(r"\n{3,}", "\n\n", text)
+
     return text.strip()
 
 

@@ -12,7 +12,7 @@ from pathlib import Path
 from dataclasses import dataclass, field
 from typing import Optional, List
 
-import fitz  # PyMuPDF
+import pymupdf
 import docx
 
 
@@ -43,7 +43,7 @@ class LoadedDocument:
 # ----------------------------------------------------------------
 def _load_pdf(path: Path) -> LoadedDocument:
     """Extract text page-by-page, tracking char offsets."""
-    doc = fitz.open(path)
+    doc = pymupdf.open(path)
     pages: List[PageText] = []
     chunks: List[str] = []
     cursor = 0
