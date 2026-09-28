@@ -66,12 +66,12 @@ ner:
 # ---------- Clause Classification ----------
 classification:
   base_model: "distilbert-base-uncased"
-  num_labels: 41
+  num_labels: 100
   max_length: 256
-  batch_size: 16
-  learning_rate: 2.0e-5
-  epochs: 3
-  model_save_path: "models/clause_classifier"
+  batch_size: 16          # inference batch size (CPU-friendly)
+  learning_rate: 2.0e-5   # (kept for retraining reference)
+  epochs: 3               # (kept for retraining reference)
+  model_save_path: "models/distilbert_ledgar_100_best"
 
 # ---------- Semantic Similarity ----------
 embeddings:
