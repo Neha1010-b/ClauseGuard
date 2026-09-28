@@ -1,0 +1,12 @@
+from .clause import (
+    Clause,
+    ROLE_PREAMBLE, ROLE_PARTIES, ROLE_RECITAL, ROLE_HEADING,
+    ROLE_CLAUSE, ROLE_SUBCLAUSE, ROLE_SIGNATURE, ROLE_UNKNOWN,
+)
+from .segmenter import segment
+
+__all__ = [
+    "Clause", "segment",
+    "ROLE_PREAMBLE", "ROLE_PARTIES", "ROLE_RECITAL", "ROLE_HEADING",
+    "ROLE_CLAUSE", "ROLE_SUBCLAUSE", "ROLE_SIGNATURE", "ROLE_UNKNOWN",
+]

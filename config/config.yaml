@@ -1,17 +1,13 @@
 # ============================================================
-# Contract Clause Risk Analyzer — Master Configuration
-# ============================================================
-# RULE: Nothing in the codebase should hardcode these values.
-# All modules load this file at startup.
+# Contract Clause Risk Analyzer - Master Configuration
 # ============================================================
 
 project:
   name: "Contract Clause Risk Analyzer"
   version: "0.1.0"
   author: "Your Name"
-  random_seed: 42          # For reproducibility
+  random_seed: 42
 
-# ---------- Paths ----------
 paths:
   data_raw: "data/raw"
   data_processed: "data/processed"
@@ -23,20 +19,44 @@ paths:
 # ---------- Document Ingestion ----------
 ingestion:
   supported_formats: ["pdf", "docx", "txt"]
-  min_text_length: 100       # Reject files shorter than this
-  ocr_fallback: true         # If PDF has no text layer, try OCR
+  min_text_length: 100
+  ocr_fallback: true
   ocr_language: "eng"
 
 # ---------- Clause Segmentation ----------
 segmentation:
-  min_clause_length: 20      # Characters — filter noise
-  max_clause_length: 5000    # Characters — split mega-clauses
-  numbering_patterns:        # Regex patterns for clause numbering
-    - '^\d+\.\s'             # "1. "
-    - '^\d+\.\d+\s'          # "1.1 "
-    - '^Article\s+[IVXLC]+'  # "Article IV"
-    - '^Section\s+\d+'       # "Section 3"
-    - '^[A-Z][A-Z\s]{4,}$'   # ALL CAPS HEADING
+  numbering_patterns:
+    - '(?:^|\n|(?<=\.\s)|(?<=\n))(?P<num>\d+(?:\.\d+)+)\.?\s'
+    - '(?:^|\n|(?<=\.\s)|(?<=\n))(?P<num>\d+)\.\s'
+    - '(?P<num>\([ivxlcIVXLC]+\))\s'
+    - '(?:^|\n)\s*(?P<num>[IVXLC]{1,5})\.\s'
+    - '(?P<num>\([a-z]\))\s'
+    - '(?:^|\n)\s*(?P<num>[a-z]\.)\s'
+    - '(?P<num>ARTICLE\s+[IVXLC]+)\b'
+    - '(?P<num>Section\s+\d+(?:\.\d+)*)\b'
+    - '(?P<num>Clause\s+\d+(?:\.\d+)*)\b'
+
+  structural_markers:
+    - pattern: '^\s*WHEREAS\b'
+      role: 'RECITAL'
+    - pattern: '^\s*NOW,?\s+THEREFORE\b'
+      role: 'RECITAL'
+    - pattern: '^\s*BY\s+AND\s+BETWEEN\b'
+      role: 'PARTIES'
+    - pattern: '^\s*IN\s+WITNESS\s+WHEREOF\b'
+      role: 'SIGNATURE'
+    - pattern: '^\s*WITNESSETH\b'
+      role: 'RECITAL'
+    - pattern: '^\s*RECITALS?\b'
+      role: 'RECITAL'
+
+  min_clause_length: 20
+  max_clause_length: 8000
+  min_clause_words: 4
+  split_within_lines: true
+  max_level: 5
+  normalize_quotes: true
+  normalize_dashes: true
 
 # ---------- NER ----------
 ner:
@@ -45,8 +65,8 @@ ner:
 
 # ---------- Clause Classification ----------
 classification:
-  base_model: "distilbert-base-uncased"    # Small, CPU-friendly
-  num_labels: 41                            # LEDGAR has 41 clause types
+  base_model: "distilbert-base-uncased"
+  num_labels: 41
   max_length: 256
   batch_size: 16
   learning_rate: 2.0e-5
@@ -55,13 +75,13 @@ classification:
 
 # ---------- Semantic Similarity ----------
 embeddings:
-  model_name: "sentence-transformers/all-MiniLM-L6-v2"  # 22M params, fast
+  model_name: "sentence-transformers/all-MiniLM-L6-v2"
   embedding_dim: 384
-  similarity_threshold: 0.75    # Below this = deviation detected
+  similarity_threshold: 0.75
 
 # ---------- Reference Bank / FAISS ----------
 reference_bank:
-  index_type: "IndexFlatL2"     # Simple, exact search
+  index_type: "IndexFlatL2"
   index_path: "models/faiss_index.bin"
   metadata_path: "models/faiss_metadata.json"
 
@@ -71,7 +91,7 @@ risk:
     low: 0.35
     medium: 0.65
     high: 0.85
-  weights:                       # Multi-signal weighting
+  weights:
     deviation_from_reference: 0.4
     risky_pattern_score: 0.4
     entity_anomaly_score: 0.2
@@ -79,12 +99,11 @@ risk:
 
 # ---------- RAG / Explanation ----------
 rag:
-  llm_provider: "gemini"         # "gemini" | "openai" | "ollama"
+  llm_provider: "gemini"
   gemini_model: "gemini-1.5-flash"
   max_context_chunks: 5
   max_tokens_response: 512
-  temperature: 0.2               # Low = factual, less creative
-  # API key loaded from env var GEMINI_API_KEY (never hardcode!)
+  temperature: 0.2
 
 # ---------- Backend API ----------
 api:
