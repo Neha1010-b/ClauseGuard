@@ -206,6 +206,65 @@ risk:
       weight: 0.5
       tag: 'indemnify'
 
+          # ---- Natural-language variants (Fix B) ----
+
+    # Non-compete phrased naturally
+    - pattern: '\bshall\s+not\b.{0,40}\bcompete\b'
+      weight: 0.75
+      tag: 'non-compete'
+    - pattern: '\bnot\s+engage\b.{0,60}\bcompeting\b'
+      weight: 0.70
+      tag: 'non-compete'
+    - pattern: '\banywhere\s+in\b'
+      weight: 0.45
+      tag: 'non-compete'
+    - pattern: '\bthroughout\s+the\s+world\b'
+      weight: 0.55
+      tag: 'non-compete'
+
+    # Duration extremes
+    - pattern: '\b(?:five|ten|7|8|9|10)\s*\(?\s*(?:five|ten|seven|eight|nine|ten)\s*\)?\s*years?\b'
+      weight: 0.55
+      tag: 'long-duration'
+    - pattern: '\bfor\s+a\s+period\s+of\s+(?:five|ten|seven|eight|nine|10)\b'
+      weight: 0.55
+      tag: 'long-duration'
+
+    # Auto-renewal phrasing
+    - pattern: '\bshall\s+(?:be\s+)?automatically?\s+(?:renew|extend)'
+      weight: 0.80
+      tag: 'auto-renew'
+    - pattern: '\b(?:one|two)\s+hundred\s+(?:eighty|ninety|twenty|forty|sixty)\s*\(?\s*1?8?0?\s*\)?\s*days?\b'
+      weight: 0.60
+      tag: 'long-notice'
+    - pattern: '\b(?:90|120|180|270|365)\s*\([^)]+\)\s*days?\b'
+      weight: 0.55
+      tag: 'long-notice'
+
+    # Sole discretion variants
+    - pattern: '\bsole\s+discretion\b'
+      weight: 0.90
+      tag: 'unilateral-discretion'
+    - pattern: '\bwithout\s+(?:prior\s+)?notice\b'
+      weight: 0.70
+      tag: 'no-notice'
+
+    # Unilateral powers
+    - pattern: '\bmay\s+(?:at\s+its\s+option\s+)?(?:unilaterally|modify|amend|change)'
+      weight: 0.55
+      tag: 'unilateral-change'
+    - pattern: '\bshall\s+have\s+the\s+right\s+to\b.{0,30}\bsuspend\b'
+      weight: 0.65
+      tag: 'unilateral-suspension'
+
+    # Waiver variants
+    - pattern: '\bwaive[sd]?\b'
+      weight: 0.45
+      tag: 'waiver'
+    - pattern: '\bwaives?\s+all\b'
+      weight: 0.65
+      tag: 'waiver'
+
   override:
     risky_lang_medium_floor: 0.65
     risky_lang_high_floor: 0.85
