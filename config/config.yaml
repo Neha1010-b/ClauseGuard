@@ -4,7 +4,7 @@
 
 project:
   name: "Contract Clause Risk Analyzer"
-  version: "0.1.0"
+  version: "0.5.5"
   author: "Your Name"
   random_seed: 42
 
@@ -68,9 +68,9 @@ classification:
   base_model: "distilbert-base-uncased"
   num_labels: 100
   max_length: 256
-  batch_size: 16          # inference batch size (CPU-friendly)
-  learning_rate: 2.0e-5   # (kept for retraining reference)
-  epochs: 3               # (kept for retraining reference)
+  batch_size: 16
+  learning_rate: 2.0e-5
+  epochs: 3
   model_save_path: "models/distilbert_ledgar_100_best"
 
 # ---------- Semantic Similarity ----------
@@ -88,14 +88,123 @@ reference_bank:
 # ---------- Risk Scoring ----------
 risk:
   thresholds:
-    low: 0.35
-    medium: 0.65
-    high: 0.85
+    low: 0.30
+    medium: 0.50
+    high: 0.70
   weights:
     deviation_from_reference: 0.4
     risky_pattern_score: 0.4
     entity_anomaly_score: 0.2
   categories: ["Financial", "Legal", "Operational", "Ambiguity"]
+  min_confidence_for_risk: 0.25
+  placeholder_patterns:
+    - '<<[^>]+>>'
+    - '_{4,}'
+    - '\[INSERT[^\]]*\]'
+  label_multipliers:
+    Indemnifications: 1.30
+    Indemnity: 1.30
+    Terminations: 1.25
+    Governing Laws: 1.20
+    Arbitration: 1.15
+    Intellectual Property: 1.20
+    Warranties: 1.10
+    Representations: 1.10
+    Enforceability: 1.15
+    Binding Effects: 1.15
+    Confidentiality: 1.10
+    Insurances: 1.10
+    Liabilities: 1.30
+    Specific Performance: 1.20
+    Remedies: 1.15
+    Notices: 0.80
+    Counterparts: 0.70
+    Headings: 0.60
+    Severability: 0.75
+    Further Assurances: 0.80
+    Entire Agreements: 0.85
+    Amendments: 0.85
+    Waivers: 0.85
+
+  risky_lexicon:
+    # Unilateral power
+    - pattern: '\bsolo?\s+discretion\b'
+      weight: 0.9
+      tag: 'unilateral-discretion'
+    - pattern: '\bsole\s+(?:and\s+absolute\s+)?discretion\b'
+      weight: 0.9
+      tag: 'unilateral-discretion'
+    - pattern: '\bat\s+any\s+time\b'
+      weight: 0.5
+      tag: 'unilateral-timing'
+    - pattern: '\bwith\s+or\s+without\s+cause\b'
+      weight: 0.8
+      tag: 'no-cause'
+    - pattern: '\bwithout\s+(?:prior\s+)?notice\b'
+      weight: 0.7
+      tag: 'no-notice'
+    - pattern: '\bwithout\s+(?:any\s+)?liabilit(?:y|ies)\b'
+      weight: 0.8
+      tag: 'no-liability'
+
+    # Unlimited scope
+    - pattern: '\bwithout\s+limitation\b'
+      weight: 0.5
+      tag: 'unlimited-scope'
+    - pattern: '\bany\s+and\s+all\b'
+      weight: 0.5
+      tag: 'unlimited-scope'
+    - pattern: '\bwhatsoever\b'
+      weight: 0.4
+      tag: 'unlimited-scope'
+    - pattern: '\bin\s+perpetuity\b'
+      weight: 0.9
+      tag: 'perpetual'
+    - pattern: '\birrevocably\b'
+      weight: 0.5
+      tag: 'irrevocable'
+
+    # Waivers
+    - pattern: '\bwaive[sd]?\s+(?:all|any)\b'
+      weight: 0.6
+      tag: 'waiver'
+    - pattern: '\bno\s+waiver\b'
+      weight: 0.3
+      tag: 'waiver'
+
+    # Auto-renewal traps
+    - pattern: '\bautomatically?\s+renew'
+      weight: 0.7
+      tag: 'auto-renew'
+    - pattern: '\bevergreen\b'
+      weight: 0.7
+      tag: 'auto-renew'
+
+    # Non-compete/non-solicit extremes
+    - pattern: '\bnon-?compet(?:e|ition)\b'
+      weight: 0.6
+      tag: 'non-compete'
+    - pattern: '\bnon-?solicit\b'
+      weight: 0.5
+      tag: 'non-solicit'
+
+    # Assignment/ownership extremes
+    - pattern: '\birrevocably\s+assign'
+      weight: 0.7
+      tag: 'assignment'
+    - pattern: '\bwithout\s+(?:additional\s+)?compensation\b'
+      weight: 0.6
+      tag: 'uncompensated'
+
+    # Time-pressure
+    - pattern: '\bimmediately\s+upon\b'
+      weight: 0.5
+      tag: 'immediate'
+
+    # Indemnification without cap
+    - pattern: '\bhold\s+harmless\b'
+      weight: 0.5
+      tag: 'indemnify'
 
 # ---------- RAG / Explanation ----------
 rag:
