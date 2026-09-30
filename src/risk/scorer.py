@@ -1,13 +1,14 @@
 """
-Risk scoring engine — Phase 5.7
+Risk scoring engine — Phase 5.8
 Combines classifier confidence + reference deviation + label agreement +
-risky-language patterns into a per-clause risk assessment.
+risky-language patterns + substantive-risk override into a per-clause
+risk assessment.
 
-Phase 5.7 addition: a substantive risk signal.
-The earlier version could not distinguish between "standard Termination clause"
-and "unilateral no-notice Termination clause" — both scored low because both
-were well-formed. The risky_lexicon captures substantive risk that neither
-classification nor semantic similarity detects.
+Evolution:
+  v1 (5.1): classifier confidence + deviation + mismatch
+  v2 (5.5): + confidence floor, placeholder detection, label multipliers
+  v3 (5.7): + risky-language lexicon (substantive signal)
+  v4 (5.8): + substantive-risk override (strong signals floor the score)
 """
 import re
 from typing import List, Dict, Any, Optional, Pattern, Tuple
@@ -54,6 +55,7 @@ class RiskSignals:
     label_multiplier: float = 1.0
     risky_language_score: float = 0.0
     risky_language_tags: List[str] = field(default_factory=list)
+    override_applied: str = ""   # "medium" | "high" | ""
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -67,6 +69,7 @@ class RiskSignals:
             "label_multiplier": self.label_multiplier,
             "risky_language_score": self.risky_language_score,
             "risky_language_tags": self.risky_language_tags,
+            "override_applied": self.override_applied,
         }
 
 
@@ -81,6 +84,7 @@ class RiskScorer:
         self.categories = cfg["categories"]
         self.min_conf_for_risk = float(cfg.get("min_confidence_for_risk", 0.25))
         self.label_multipliers = dict(cfg.get("label_multipliers", {}) or {})
+        self.override = dict(cfg.get("override", {}) or {})
 
         # Compile placeholder regexes
         self._placeholder_patterns: List[Pattern] = [
@@ -124,15 +128,11 @@ class RiskScorer:
 
     def _risky_language_score(self, text: str) -> Tuple[float, List[str]]:
         """
-        Scan text for risky-language patterns. Returns:
-          - risk_score: aggregated (capped at 1.0) — uses max + diminishing
-            contributions from additional matches, so a clause with one strong
-            pattern scores high but three weak patterns also stack.
-          - tags: list of pattern tags that fired.
+        Scan text for risky-language patterns.
 
         Scoring model:
           - Take the max weight as the base.
-          - Add 40% of each additional (unique) weight on top.
+          - Add 40% of each additional (unique-tag) weight on top.
           - Cap at 1.0.
         """
         if not text:
@@ -149,7 +149,7 @@ class RiskScorer:
         if not matched_weights:
             return 0.0, []
 
-        # Deduplicate tags (same tag may fire from multiple patterns)
+        # Deduplicate tags
         seen = set()
         unique_tags = []
         for t in tags:
@@ -208,7 +208,7 @@ class RiskScorer:
         is_placeholder = self._is_placeholder_clause(clause.text)
         confidence_floor_hit = conf < self.min_conf_for_risk
 
-        # ---- NEW: risky-language signal ----
+        # ---- Risky-language signal ----
         risky_score, risky_tags = self._risky_language_score(clause.text)
 
         # --- Normalize signals to "risk contribution" ---
@@ -217,16 +217,13 @@ class RiskScorer:
         mismatch_risk = mismatch
 
         # --- Composite weighted score ---
-        # We now have 4 signals. Redistribute weights: we keep the old weights
-        # for the original 3 signals but add risky_language on top with its own
-        # weight, then renormalize the whole thing.
+        # 4 signals: deviation, confidence-uncertainty, mismatch, risky-lang
         w = self.weights
         w_dev = w["deviation_from_reference"]
         w_conf = w["risky_pattern_score"]
         w_mismatch = w["entity_anomaly_score"]
-        w_risky_lang = 0.40   # new signal gets substantial weight
+        w_risky_lang = 0.40
 
-        # Renormalize so weights sum to 1.0 again
         total = w_dev + w_conf + w_mismatch + w_risky_lang
         w_dev /= total
         w_conf /= total
@@ -244,13 +241,30 @@ class RiskScorer:
             composite = composite * (1.0 - short_penalty)
         if is_placeholder:
             composite = composite * 0.5
+
         if confidence_floor_hit and risky_score < 0.5:
-            # Cap only if there's no risky-language signal — a clause with
-            # "sole discretion" shouldn't be silenced by low classifier confidence.
             composite = min(composite, self.thresholds["low"] - 0.01)
 
         multiplier = self._label_multiplier(classification.get("label"))
         composite = composite * multiplier
+
+        # --- Substantive-risk override ---
+        # A strong risky-language signal floors the score, because
+        # substantive risk should not be drowned out by high classifier
+        # confidence or low deviation.
+        override_cfg = self.override
+        override_applied = ""
+        if risky_score >= override_cfg.get("risky_lang_high_floor", 0.85):
+            floor = override_cfg.get("high_score_floor", 0.70)
+            if composite < floor:
+                composite = floor
+                override_applied = "high"
+        elif risky_score >= override_cfg.get("risky_lang_medium_floor", 0.65):
+            floor = override_cfg.get("medium_score_floor", 0.50)
+            if composite < floor:
+                composite = floor
+                override_applied = "medium"
+
         composite = max(0.0, min(1.0, composite))
 
         # --- Risk level ---
@@ -281,6 +295,7 @@ class RiskScorer:
             is_placeholder=is_placeholder,
             confidence_floor_hit=confidence_floor_hit,
             risky_tags=risky_tags,
+            override_applied=override_applied,
         )
 
         signals = RiskSignals(
@@ -294,6 +309,7 @@ class RiskScorer:
             label_multiplier=multiplier,
             risky_language_score=risky_score,
             risky_language_tags=risky_tags,
+            override_applied=override_applied,
         )
 
         return {
@@ -341,7 +357,6 @@ class RiskScorer:
             if label in _OPERATIONAL_LABELS:
                 categories.append("Operational")
 
-        # NEW: Some risky tags imply specific risk categories
         tag_to_category = {
             "unilateral-discretion": "Operational",
             "unilateral-timing": "Operational",
@@ -392,6 +407,7 @@ class RiskScorer:
         is_placeholder: bool,
         confidence_floor_hit: bool,
         risky_tags: List[str],
+        override_applied: str,
     ) -> str:
         parts = []
         if label:
@@ -407,9 +423,12 @@ class RiskScorer:
         if risky_tags:
             parts.append(f"risky language: {', '.join(risky_tags)}")
 
+        if override_applied:
+            parts.append(f"score floored by substantive-risk override ({override_applied})")
+
         if is_placeholder:
             parts.append("form-field clause (mostly placeholders)")
-        elif confidence_floor_hit:
+        elif confidence_floor_hit and not override_applied:
             parts.append(
                 f"unclassifiable (conf={confidence:.0%}) — below risk-scoring floor"
             )
@@ -417,9 +436,13 @@ class RiskScorer:
             if confidence < 0.5:
                 parts.append(f"classifier uncertain (conf={confidence:.0%})")
             if deviation > 0.55:
-                parts.append(f"significantly different from standard ({deviation:.0%} deviation)")
+                parts.append(
+                    f"significantly different from standard ({deviation:.0%} deviation)"
+                )
             elif deviation > 0.35:
-                parts.append(f"somewhat different from standard ({deviation:.0%} deviation)")
+                parts.append(
+                    f"somewhat different from standard ({deviation:.0%} deviation)"
+                )
             if mismatch > 0:
                 parts.append("classifier and reference-bank disagree")
             if short:

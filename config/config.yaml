@@ -206,6 +206,12 @@ risk:
       weight: 0.5
       tag: 'indemnify'
 
+  override:
+    risky_lang_medium_floor: 0.65
+    risky_lang_high_floor: 0.85
+    medium_score_floor: 0.50
+    high_score_floor: 0.70
+
 # ---------- RAG / Explanation ----------
 rag:
   llm_provider: "gemini"
