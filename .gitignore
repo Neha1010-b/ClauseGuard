@@ -18,6 +18,7 @@ ENV/
 data/raw/*
 data/processed/*
 data/reference/*
+!data/reference/reference_bank.json
 !data/**/.gitkeep
 
 # Never commit model weights — regenerable via scripts
