@@ -192,35 +192,49 @@ def _merge_tiny_fragments(
     """
     If a clause is too small, merge it into the previous clause's span.
 
-    We only modify char_end of the previous clause; text is re-derived from
-    full_text to guarantee the invariant:
-        clause.text == full_text[clause.char_start:clause.char_end]
+    EXCEPTION: if the tiny clause looks like a heading (short, capitalized,
+    ends with a period or is all-caps), keep it as its own clause. Headings
+    are semantically meaningful — merging them pollutes the next clause's
+    hierarchy.
 
-    Any whitespace/newlines between the two spans are preserved because we
-    slice from full_text rather than concatenating strings.
+    Invariant preserved:
+        clause.text == full_text[clause.char_start:clause.char_end]
     """
     if not clauses:
         return []
+
+    import re
+    heading_like = re.compile(
+        r"^(?:\d+\.\s*)?[A-Z][A-Za-z\s&\-:,]{2,80}\.?$"
+    )
+
+    def looks_like_heading(c: Clause) -> bool:
+        # Must have a number (e.g., "8. Termination") OR be very short + capitalized
+        text = c.text.strip()
+        # Length guard — headings are short
+        if len(text) > 80:
+            return False
+        # Must end with . or be all-caps or be title-cased short
+        if not (text.endswith(".") or text.isupper() or
+                (len(text.split()) <= 6 and text[0].isupper())):
+            return False
+        return True
 
     merged: List[Clause] = []
     for c in clauses:
         words = len(c.text.split())
         too_small = c.length < min_chars or words < min_words
-        if too_small and merged:
+        if too_small and merged and not looks_like_heading(c):
+            # Swallow this clause's span into previous
             prev = merged[-1]
-            # Extend previous clause's span to swallow this one
             prev.char_end = c.char_end
-            # Re-derive text from full_text so offsets stay exact
             prev.text = full_text[prev.char_start:prev.char_end]
             continue
         merged.append(c)
 
-    # Re-number IDs after merging
     for i, c in enumerate(merged):
         c.id = i
 
-    # Parent/child references pointed at OLD ids — invalidate so
-    # _build_hierarchy can rebuild them cleanly
     for c in merged:
         c.parent_id = None
         c.child_ids = []
