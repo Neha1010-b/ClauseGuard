@@ -410,34 +410,56 @@ class RiskScorer:
         override_applied: str,
     ) -> str:
         parts = []
+
+        # --- Base description ---
         if label:
             parts.append(f"'{label}' clause")
         else:
             parts.append("Unlabeled clause")
 
+        # --- Risk level ---
         if level == "high":
             parts.append("HIGH RISK")
         elif level == "medium":
             parts.append("moderate risk")
+        # "low" adds nothing — keeps hints shorter
 
+        # --- Risky language tags ---
         if risky_tags:
             parts.append(f"risky language: {', '.join(risky_tags)}")
 
+        # --- Override notice ---
         if override_applied:
-            parts.append(f"score floored by substantive-risk override ({override_applied})")
+            parts.append(
+                f"score floored by substantive-risk override ({override_applied})"
+            )
+
+                # --- Supplementary reasons ---
+        # Decide which "why" narrative fits this clause:
+        #   A. Form-field (placeholder clause) — special message
+        #   B. Override applied — mention classifier uncertainty if notable
+        #   C. Floor-capped without risky language — say so explicitly
+        #   D. Everything else — spell out contributing signals
 
         if is_placeholder:
             parts.append("form-field clause (mostly placeholders)")
-        elif confidence_floor_hit and not override_applied:
+        elif override_applied:
+            if confidence < 0.5:
+                parts.append(f"classifier uncertain (conf={confidence:.0%})")
+        elif confidence_floor_hit and not risky_tags:
+            # Capped because: low confidence AND no risky language found
             parts.append(
-                f"unclassifiable (conf={confidence:.0%}) — below risk-scoring floor"
+                f"classifier uncertain (conf={confidence:.0%}) — "
+                "no risky language detected"
             )
         else:
+            # Normal path — spell out signals
             if confidence < 0.5:
                 parts.append(f"classifier uncertain (conf={confidence:.0%})")
             if deviation > 0.55:
                 parts.append(
-                    f"significantly different from standard ({deviation:.0%} deviation)"
+                    f"significantly different from standard "
+                    f"({deviation:.0%} deviation)"
                 )
             elif deviation > 0.35:
                 parts.append(
@@ -448,4 +470,4 @@ class RiskScorer:
             if short:
                 parts.append("short clause (fragment)")
 
-        return " — ".join(parts)
+        return " — ".join(parts)        
