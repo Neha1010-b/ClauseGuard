@@ -122,6 +122,5 @@ def main():
     print(f"  Top-3 accuracy: {(correct+partial)/total:.1%}")
     print("=" * 85)
 
-
 if __name__ == "__main__":
     main()
