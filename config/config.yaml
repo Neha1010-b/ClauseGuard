@@ -274,10 +274,17 @@ risk:
 # ---------- RAG / Explanation ----------
 rag:
   llm_provider: "gemini"
-  gemini_model: "gemini-1.5-flash"
-  max_context_chunks: 5
-  max_tokens_response: 512
+  primary_model: "gemini-3.5-flash"
+  fallback_models:
+    - "gemini-3.8-flash"
   temperature: 0.2
+  max_output_tokens: 2000
+  thinking_budget: 0 
+  request_timeout_sec: 30
+  max_retries: 2
+  # Minimum risk level at which we generate an LLM explanation
+  # (low-risk clauses get the short hint only, saving API calls)
+  explain_at_or_above: "medium"
 
 # ---------- Backend API ----------
 api:
