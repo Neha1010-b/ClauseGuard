@@ -94,3 +94,33 @@ class AuthUserResponse(BaseModel):
     id: int
     email: str
     full_name: str
+
+# ---------- Document persistence schemas ----------
+
+class SaveDocumentRequest(BaseModel):
+    filename: str = Field(..., min_length=1, max_length=300)
+    analysis: AnalysisResponse
+
+
+class DocumentSummary(BaseModel):
+    id: str
+    filename: str
+    format: str
+    pages: int
+    chars: int
+    total_clauses: int
+    high_count: int
+    medium_count: int
+    low_count: int
+    created_at: str
+
+
+class DocumentListResponse(BaseModel):
+    documents: List[DocumentSummary]
+
+
+class DocumentDetailResponse(BaseModel):
+    id: str
+    filename: str
+    created_at: str
+    analysis: AnalysisResponse

@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Upload — ClauseGuard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/ui/assets/styles.css">
+</head>
+<body class="bg-slate-50 min-h-screen">
+
+    <div class="flex">
+        <aside class="w-64 bg-slate-900 min-h-screen flex flex-col fixed">
+            <div class="px-6 py-6 border-b border-slate-800">
+                <a href="/ui/dashboard.html" class="flex items-center gap-2">
+                    <div class="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
+                    </div>
+                    <span class="text-base font-bold text-white">ClauseGuard</span>
+                </a>
+            </div>
+            <nav id="nav" class="flex-1 px-3 py-4 space-y-1"></nav>
+            <div id="user-block" class="px-3 py-4 border-t border-slate-800"></div>
+        </aside>
+
+        <main class="ml-64 flex-1">
+            <header class="bg-white border-b border-slate-200 px-8 py-4">
+                <h1 class="text-xl font-bold text-slate-900">Upload contract</h1>
+                <p class="text-sm text-slate-500">We'll analyze it clause-by-clause.</p>
+            </header>
+
+            <div class="p-8 max-w-3xl mx-auto">
+                <!-- Steps indicator -->
+                <div class="flex items-center justify-center mb-12 gap-4">
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-full bg-emerald-600 text-white flex items-center justify-center text-sm font-semibold">1</div>
+                        <span class="text-sm font-medium text-slate-900">Upload</span>
+                    </div>
+                    <div class="w-12 h-0.5 bg-slate-200"></div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-sm font-semibold">2</div>
+                        <span class="text-sm font-medium text-slate-400">Analyze</span>
+                    </div>
+                    <div class="w-12 h-0.5 bg-slate-200"></div>
+                    <div class="flex items-center gap-2">
+                        <div class="w-8 h-8 rounded-full bg-slate-200 text-slate-500 flex items-center justify-center text-sm font-semibold">3</div>
+                        <span class="text-sm font-medium text-slate-400">Results</span>
+                    </div>
+                </div>
+
+                <!-- Upload zone -->
+                <div id="upload-view">
+                    <div id="dropzone"
+                         class="bg-white border-2 border-dashed border-slate-300 rounded-2xl p-12 text-center transition-colors hover:border-emerald-400 cursor-pointer">
+                        <input type="file" id="file-input" class="hidden" accept=".pdf,.docx,.txt">
+                        <div class="w-16 h-16 rounded-full bg-emerald-50 flex items-center justify-center mx-auto mb-6">
+                            <svg class="w-8 h-8 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                            </svg>
+                        </div>
+                        <h3 class="text-lg font-semibold text-slate-900 mb-2">Upload your legal document</h3>
+                        <p class="text-sm text-slate-500 mb-6">Drag and drop your file here, or click to browse</p>
+                        <button class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-6 py-2.5 rounded-lg transition-colors">
+                            Choose file
+                        </button>
+                        <p class="text-xs text-slate-400 mt-6">Supports PDF, DOCX, TXT (Max 20 MB)</p>
+                    </div>
+
+                    <!-- Sample docs -->
+                    <div class="mt-6 text-center">
+                        <p class="text-xs text-slate-400 mb-3">Or try a sample document</p>
+                        <div class="flex justify-center gap-2">
+                            <span class="text-xs bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg opacity-60">Employment Contract</span>
+                            <span class="text-xs bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg opacity-60">NDA Agreement</span>
+                            <span class="text-xs bg-white border border-slate-200 text-slate-600 px-3 py-1.5 rounded-lg opacity-60">Service Agreement</span>
+                        </div>
+                    </div>
+
+                    <!-- Options -->
+                    <div class="mt-8 bg-white rounded-xl border border-slate-200 p-5">
+                        <label class="flex items-center gap-3 cursor-pointer">
+                            <input type="checkbox" id="skip-llm" class="w-4 h-4 text-emerald-600 rounded border-slate-300 focus:ring-emerald-500">
+                            <div>
+                                <div class="text-sm font-medium text-slate-900">Skip AI explanations</div>
+                                <div class="text-xs text-slate-500">Faster analysis, no LLM-generated explanations for risky clauses.</div>
+                            </div>
+                        </label>
+                    </div>
+                </div>
+
+                <!-- Analyzing view -->
+                <div id="analyzing-view" class="hidden text-center py-16">
+                    <div class="w-16 h-16 mx-auto mb-6 relative">
+                        <div class="absolute inset-0 rounded-full border-4 border-slate-200"></div>
+                        <div class="absolute inset-0 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin"></div>
+                    </div>
+                    <h3 class="text-lg font-semibold text-slate-900 mb-2">Analyzing your contract...</h3>
+                    <p class="text-sm text-slate-500" id="analyzing-status">Extracting clauses</p>
+                    <p class="text-xs text-slate-400 mt-4">This usually takes 20-60 seconds.</p>
+                </div>
+
+                <!-- Error view -->
+                <div id="error-view" class="hidden bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+                    <div class="w-12 h-12 rounded-full bg-red-100 flex items-center justify-center mx-auto mb-4">
+                        <svg class="w-6 h-6 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                    </div>
+                    <h3 class="text-sm font-semibold text-red-900 mb-1">Analysis failed</h3>
+                    <p class="text-sm text-red-700 mb-4" id="error-message">Something went wrong.</p>
+                    <button onclick="location.reload()" class="bg-red-600 hover:bg-red-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
+                        Try again
+                    </button>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/ui/assets/app.js"></script>
+    <script src="/ui/assets/upload.js"></script>
+</body>
+</html>

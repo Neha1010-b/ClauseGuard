@@ -19,6 +19,8 @@ import time
 import shutil
 import traceback
 from pathlib import Path
+import json
+from datetime import datetime, timezone
 
 from fastapi import FastAPI, File, UploadFile, Form, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
@@ -33,7 +35,12 @@ from . import db as db_module
 from . import auth as auth_module
 from .schemas import (
     SignupRequest, SigninRequest, AuthUserResponse,
+    SaveDocumentRequest, DocumentSummary, DocumentListResponse, DocumentDetailResponse,
 )
+
+from fastapi.staticfiles import StaticFiles
+from fastapi.responses import FileResponse
+
 
 
 # ============================================================
@@ -275,3 +282,111 @@ def signout(response: Response):
 def me(user: dict = Depends(auth_module.current_user)):
     """Return the current user's profile."""
     return AuthUserResponse(id=user["id"], email=user["email"], full_name=user["full_name"])
+
+# ============================================================
+# Serve frontend (must be AFTER all API routes)
+# ============================================================
+_FRONTEND_DIR = PROJECT_ROOT / "frontend"
+if _FRONTEND_DIR.exists():
+    app.mount("/ui", StaticFiles(directory=str(_FRONTEND_DIR), html=True), name="ui")
+
+# ============================================================
+# Document persistence endpoints (auth required)
+# ============================================================
+def _iso_now() -> str:
+    return datetime.now(timezone.utc).strftime("%Y-%m-%d %H:%M:%S")
+
+
+@app.post("/documents", response_model=DocumentSummary)
+def save_document_endpoint(
+    payload: SaveDocumentRequest,
+    user: dict = Depends(auth_module.current_user),
+):
+    """
+    Save a completed analysis for the current user.
+    The full AnalysisResponse is stored as JSON.
+    """
+    doc_id = uuid.uuid4().hex
+    analysis_json = payload.analysis.model_dump_json()
+
+    db_module.save_document(
+        doc_id=doc_id,
+        user_id=user["id"],
+        filename=payload.filename,
+        format=payload.analysis.document.format,
+        pages=payload.analysis.document.pages,
+        chars=payload.analysis.document.chars,
+        total_clauses=payload.analysis.summary.total_clauses,
+        high_count=payload.analysis.summary.high,
+        medium_count=payload.analysis.summary.medium,
+        low_count=payload.analysis.summary.low,
+        analysis_json=analysis_json,
+    )
+
+    return DocumentSummary(
+        id=doc_id,
+        filename=payload.filename,
+        format=payload.analysis.document.format,
+        pages=payload.analysis.document.pages,
+        chars=payload.analysis.document.chars,
+        total_clauses=payload.analysis.summary.total_clauses,
+        high_count=payload.analysis.summary.high,
+        medium_count=payload.analysis.summary.medium,
+        low_count=payload.analysis.summary.low,
+        created_at=_iso_now(),
+    )
+
+
+@app.get("/documents", response_model=DocumentListResponse)
+def list_documents_endpoint(user: dict = Depends(auth_module.current_user)):
+    """Return summary list of the user's saved documents, newest first."""
+    rows = db_module.list_documents(user["id"])
+    return DocumentListResponse(
+        documents=[
+            DocumentSummary(
+                id=r["id"],
+                filename=r["filename"],
+                format=r["format"],
+                pages=r["pages"],
+                chars=r["chars"],
+                total_clauses=r["total_clauses"],
+                high_count=r["high_count"],
+                medium_count=r["medium_count"],
+                low_count=r["low_count"],
+                created_at=r["created_at"],
+            )
+            for r in rows
+        ]
+    )
+
+
+@app.get("/documents/{doc_id}", response_model=DocumentDetailResponse)
+def get_document_endpoint(
+    doc_id: str,
+    user: dict = Depends(auth_module.current_user),
+):
+    """Return the full analysis for one document. Ensures ownership."""
+    row = db_module.get_document(doc_id, user["id"])
+    if not row:
+        raise HTTPException(status_code=404, detail="Document not found")
+
+    analysis_dict = json.loads(row["analysis_json"])
+    analysis = AnalysisResponse.model_validate(analysis_dict)
+
+    return DocumentDetailResponse(
+        id=row["id"],
+        filename=row["filename"],
+        created_at=row["created_at"],
+        analysis=analysis,
+    )
+
+
+@app.delete("/documents/{doc_id}")
+def delete_document_endpoint(
+    doc_id: str,
+    user: dict = Depends(auth_module.current_user),
+):
+    """Delete a document. Returns 404 if it doesn't exist or isn't owned."""
+    if not db_module.delete_document(doc_id, user["id"]):
+        raise HTTPException(status_code=404, detail="Document not found")
+    return {"ok": True, "id": doc_id}

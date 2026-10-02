@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Sign In — ClauseGuard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/ui/assets/styles.css">
+</head>
+<body class="bg-slate-50 min-h-screen flex">
+
+    <div class="flex-1 flex items-center justify-center px-6 py-12">
+        <div class="w-full max-w-md">
+            <a href="/ui/index.html" class="flex items-center gap-2 mb-10">
+                <div class="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center">
+                    <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                              d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                    </svg>
+                </div>
+                <span class="text-lg font-bold text-slate-900">ClauseGuard</span>
+            </a>
+
+            <h1 class="text-2xl font-bold text-slate-900 mb-2">Welcome back</h1>
+            <p class="text-slate-500 text-sm mb-8">Sign in to continue to your dashboard.</p>
+
+            <form id="signin-form" class="space-y-5">
+                <div>
+                    <label for="email" class="block text-sm font-medium text-slate-700 mb-1.5">Email</label>
+                    <input type="email" id="email" name="email" required
+                           class="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-sm"
+                           placeholder="you@example.com">
+                </div>
+                <div>
+                    <label for="password" class="block text-sm font-medium text-slate-700 mb-1.5">Password</label>
+                    <input type="password" id="password" name="password" required
+                           class="w-full px-3.5 py-2.5 border border-slate-300 rounded-lg focus:ring-2 focus:ring-emerald-500 focus:border-emerald-500 outline-none text-sm"
+                           placeholder="Enter your password">
+                </div>
+
+                <div id="error" class="hidden text-sm text-red-600 bg-red-50 border border-red-200 rounded-lg px-3 py-2"></div>
+
+                <button type="submit" id="submit-btn"
+                        class="w-full bg-emerald-600 hover:bg-emerald-700 text-white font-medium py-2.5 rounded-lg transition-colors disabled:opacity-50 disabled:cursor-not-allowed">
+                    Sign in
+                </button>
+            </form>
+
+            <p class="text-sm text-slate-500 mt-6 text-center">
+                Don't have an account?
+                <a href="/ui/signup.html" class="text-emerald-600 hover:text-emerald-700 font-medium">Sign up</a>
+            </p>
+        </div>
+    </div>
+
+    <div class="hidden lg:flex w-1/2 bg-slate-900 items-center justify-center p-12 relative overflow-hidden">
+        <div class="absolute inset-0 opacity-10">
+            <svg class="w-full h-full" viewBox="0 0 100 100" preserveAspectRatio="none">
+                <defs>
+                    <pattern id="grid" width="6" height="6" patternUnits="userSpaceOnUse">
+                        <path d="M 6 0 L 0 0 0 6" fill="none" stroke="white" stroke-width="0.3"/>
+                    </pattern>
+                </defs>
+                <rect width="100%" height="100%" fill="url(#grid)"/>
+            </svg>
+        </div>
+        <div class="max-w-md text-white relative">
+            <h2 class="text-3xl font-bold mb-4">Smarter Contract Analysis for a Safer Tomorrow</h2>
+            <p class="text-slate-300">Save time, reduce risk, and make informed decisions with AI-powered insights.</p>
+        </div>
+    </div>
+
+    <script src="/ui/assets/app.js"></script>
+    <script>
+        redirectIfAuthed();
+
+        document.getElementById("signin-form").addEventListener("submit", async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById("submit-btn");
+            const errEl = document.getElementById("error");
+            errEl.classList.add("hidden");
+
+            const payload = {
+                email: document.getElementById("email").value.trim(),
+                password: document.getElementById("password").value,
+            };
+
+            btn.disabled = true;
+            btn.textContent = "Signing in...";
+
+            try {
+                await apiFetch("/auth/signin", { method: "POST", body: payload });
+                const params = new URLSearchParams(window.location.search);
+                window.location.href = params.get("next") || "/ui/dashboard.html";
+            } catch (err) {
+                errEl.textContent = err.message || "Sign in failed";
+                errEl.classList.remove("hidden");
+                btn.disabled = false;
+                btn.textContent = "Sign in";
+            }
+        });
+    </script>
+</body>
+</html>

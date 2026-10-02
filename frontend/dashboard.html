@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard — ClauseGuard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/ui/assets/styles.css">
+</head>
+<body class="bg-slate-50 min-h-screen">
+
+    <div class="flex">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-slate-900 min-h-screen flex flex-col fixed">
+            <div class="px-6 py-6 border-b border-slate-800">
+                <a href="/ui/dashboard.html" class="flex items-center gap-2">
+                    <div class="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
+                    </div>
+                    <span class="text-base font-bold text-white">ClauseGuard</span>
+                </a>
+            </div>
+            <nav id="nav" class="flex-1 px-3 py-4 space-y-1"></nav>
+            <div id="user-block" class="px-3 py-4 border-t border-slate-800"></div>
+        </aside>
+
+        <!-- Main -->
+        <main class="ml-64 flex-1">
+            <!-- Top bar -->
+            <header class="bg-white border-b border-slate-200 px-8 py-4 flex items-center justify-between">
+                <div>
+                    <h1 class="text-xl font-bold text-slate-900">Dashboard</h1>
+                    <p class="text-sm text-slate-500" id="greeting">Welcome back</p>
+                </div>
+                <a href="/ui/upload.html" class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4"/></svg>
+                    New analysis
+                </a>
+            </header>
+
+            <div class="p-8">
+                <!-- Stats cards -->
+                <div class="grid grid-cols-4 gap-6 mb-8">
+                    <div class="bg-white rounded-xl p-5 border border-slate-200">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm text-slate-500">Documents</span>
+                            <div class="w-8 h-8 rounded-lg bg-slate-100 flex items-center justify-center">
+                                <svg class="w-4 h-4 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>
+                            </div>
+                        </div>
+                        <div class="text-2xl font-bold text-slate-900" id="stat-documents">—</div>
+                    </div>
+                    <div class="bg-white rounded-xl p-5 border border-slate-200">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm text-slate-500">High-risk clauses</span>
+                            <div class="w-8 h-8 rounded-lg bg-red-50 flex items-center justify-center">
+                                <svg class="w-4 h-4 text-red-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg>
+                            </div>
+                        </div>
+                        <div class="text-2xl font-bold text-red-600" id="stat-high">—</div>
+                    </div>
+                    <div class="bg-white rounded-xl p-5 border border-slate-200">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm text-slate-500">Medium-risk clauses</span>
+                            <div class="w-8 h-8 rounded-lg bg-amber-50 flex items-center justify-center">
+                                <svg class="w-4 h-4 text-amber-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"/></svg>
+                            </div>
+                        </div>
+                        <div class="text-2xl font-bold text-amber-600" id="stat-medium">—</div>
+                    </div>
+                    <div class="bg-white rounded-xl p-5 border border-slate-200">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm text-slate-500">Total clauses</span>
+                            <div class="w-8 h-8 rounded-lg bg-emerald-50 flex items-center justify-center">
+                                <svg class="w-4 h-4 text-emerald-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+                            </div>
+                        </div>
+                        <div class="text-2xl font-bold text-emerald-600" id="stat-clauses">—</div>
+                    </div>
+                </div>
+
+                <!-- Recent docs -->
+                <div class="bg-white rounded-xl border border-slate-200">
+                    <div class="px-6 py-4 border-b border-slate-200 flex items-center justify-between">
+                        <h2 class="text-base font-semibold text-slate-900">Recent documents</h2>
+                        <a href="/ui/upload.html" class="text-sm text-emerald-600 hover:text-emerald-700 font-medium">Upload new</a>
+                    </div>
+                    <div id="recent-docs" class="divide-y divide-slate-100"></div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script src="/ui/assets/app.js"></script>
+    <script src="/ui/assets/dashboard.js"></script>
+</body>
+</html>

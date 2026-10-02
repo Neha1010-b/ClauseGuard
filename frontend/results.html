@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Analysis — ClauseGuard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/ui/assets/styles.css">
+</head>
+<body class="bg-slate-50 min-h-screen">
+
+    <div class="flex">
+        <!-- Sidebar -->
+        <aside class="w-64 bg-slate-900 min-h-screen flex flex-col fixed">
+            <div class="px-6 py-6 border-b border-slate-800">
+                <a href="/ui/dashboard.html" class="flex items-center gap-2">
+                    <div class="w-9 h-9 rounded-lg bg-emerald-500 flex items-center justify-center">
+                        <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                  d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/>
+                        </svg>
+                    </div>
+                    <span class="text-base font-bold text-white">ClauseGuard</span>
+                </a>
+            </div>
+            <nav id="nav" class="flex-1 px-3 py-4 space-y-1"></nav>
+            <div id="user-block" class="px-3 py-4 border-t border-slate-800"></div>
+        </aside>
+
+        <!-- Main -->
+        <main class="ml-64 flex-1">
+            <!-- Top bar -->
+            <header class="bg-white border-b border-slate-200 px-8 py-4">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3 min-w-0">
+                        <a href="/ui/dashboard.html" class="text-sm text-slate-500 hover:text-slate-700">Dashboard</a>
+                        <svg class="w-4 h-4 text-slate-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7"/></svg>
+                        <h1 class="text-base font-semibold text-slate-900 truncate" id="doc-title">Loading...</h1>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button onclick="printReport()" class="text-sm text-slate-600 hover:text-slate-900 px-3 py-2 rounded-lg hover:bg-slate-100 transition-colors flex items-center gap-2">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 17h2a2 2 0 002-2v-4a2 2 0 00-2-2H5a2 2 0 00-2 2v4a2 2 0 002 2h2m2 4h6a2 2 0 002-2v-4a2 2 0 00-2-2H9a2 2 0 00-2 2v4a2 2 0 002 2zm8-12V5a2 2 0 00-2-2H9a2 2 0 00-2 2v4h10z"/></svg>
+                            Print
+                        </button>
+                        <a href="/ui/upload.html" class="bg-emerald-600 hover:bg-emerald-700 text-white text-sm font-medium px-4 py-2 rounded-lg transition-colors">
+                            New analysis
+                        </a>
+                    </div>
+                </div>
+
+                <!-- Tabs -->
+                <div class="flex items-center gap-1 mt-4 -mb-4">
+                    <button data-tab="overview" class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-700">Overview</button>
+                    <button data-tab="clauses" class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-700">Clauses</button>
+                    <button data-tab="analysis" class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-700">Analysis</button>
+                    <button data-tab="summary" class="tab-btn px-4 py-2.5 text-sm font-medium border-b-2 border-transparent text-slate-500 hover:text-slate-700">Summary</button>
+                </div>
+            </header>
+
+            <!-- Loading -->
+            <div id="loading" class="p-12 text-center">
+                <div class="w-12 h-12 mx-auto mb-4 relative">
+                    <div class="absolute inset-0 rounded-full border-4 border-slate-200"></div>
+                    <div class="absolute inset-0 rounded-full border-4 border-emerald-500 border-t-transparent animate-spin"></div>
+                </div>
+                <p class="text-sm text-slate-500">Loading analysis...</p>
+            </div>
+
+            <!-- Error -->
+            <div id="error" class="hidden p-12">
+                <div class="max-w-md mx-auto bg-red-50 border border-red-200 rounded-xl p-6 text-center">
+                    <h3 class="text-sm font-semibold text-red-900 mb-1">Could not load analysis</h3>
+                    <p class="text-sm text-red-700 mb-4" id="error-message"></p>
+                    <a href="/ui/dashboard.html" class="text-sm text-red-700 hover:text-red-900 font-medium">← Back to dashboard</a>
+                </div>
+            </div>
+
+            <!-- Content -->
+            <div id="content" class="hidden p-8">
+
+                <!-- ============== OVERVIEW TAB ============== -->
+                <div id="tab-overview" class="tab-pane">
+                    <div class="grid grid-cols-3 gap-6">
+                        <!-- Document Overview -->
+                        <div class="col-span-2 bg-white rounded-xl border border-slate-200 p-6">
+                            <h2 class="text-base font-semibold text-slate-900 mb-5">Document Overview</h2>
+                            <div class="grid grid-cols-3 gap-4 mb-6">
+                                <div>
+                                    <div class="text-xs text-slate-500 mb-1">Document Type</div>
+                                    <div class="text-sm font-medium text-slate-900" id="doc-type">—</div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-slate-500 mb-1">Total Clauses</div>
+                                    <div class="text-sm font-medium text-slate-900" id="doc-clauses">—</div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-slate-500 mb-1">Analyzed</div>
+                                    <div class="text-sm font-medium text-slate-900" id="doc-date">—</div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-slate-500 mb-1">Pages</div>
+                                    <div class="text-sm font-medium text-slate-900" id="doc-pages">—</div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-slate-500 mb-1">Size</div>
+                                    <div class="text-sm font-medium text-slate-900" id="doc-size">—</div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-slate-500 mb-1">Overall Risk</div>
+                                    <div class="text-sm font-semibold" id="doc-overall-risk">—</div>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Risk Distribution -->
+                        <div class="bg-white rounded-xl border border-slate-200 p-6">
+                            <h2 class="text-base font-semibold text-slate-900 mb-5">Risk Distribution</h2>
+                            <div class="flex items-center justify-center mb-4">
+                                <canvas id="risk-chart" width="160" height="160"></canvas>
+                            </div>
+                            <div class="space-y-2 text-sm">
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-3 h-3 rounded-full bg-red-500"></div>
+                                        <span class="text-slate-600">High risk</span>
+                                    </div>
+                                    <span class="font-semibold text-slate-900" id="count-high">0</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-3 h-3 rounded-full bg-amber-400"></div>
+                                        <span class="text-slate-600">Medium risk</span>
+                                    </div>
+                                    <span class="font-semibold text-slate-900" id="count-medium">0</span>
+                                </div>
+                                <div class="flex items-center justify-between">
+                                    <div class="flex items-center gap-2">
+                                        <div class="w-3 h-3 rounded-full bg-emerald-500"></div>
+                                        <span class="text-slate-600">Low risk</span>
+                                    </div>
+                                    <span class="font-semibold text-slate-900" id="count-low">0</span>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Key Findings -->
+                    <div class="bg-white rounded-xl border border-slate-200 p-6 mt-6">
+                        <h2 class="text-base font-semibold text-slate-900 mb-5">Key Findings</h2>
+                        <div id="key-findings" class="space-y-3"></div>
+                    </div>
+                </div>
+
+                <!-- ============== CLAUSES TAB ============== -->
+                <div id="tab-clauses" class="tab-pane hidden">
+                    <!-- Filters -->
+                    <div class="bg-white rounded-xl border border-slate-200 p-4 mb-6 flex items-center gap-3 flex-wrap">
+                        <div id="filter-chips" class="flex items-center gap-2 flex-wrap">
+                            <button data-filter="all" class="filter-chip px-3 py-1.5 text-xs font-medium rounded-lg bg-slate-900 text-white">All</button>
+                            <button data-filter="high" class="filter-chip px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50">🔴 High risk</button>
+                            <button data-filter="medium" class="filter-chip px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50">🟡 Medium risk</button>
+                            <button data-filter="low" class="filter-chip px-3 py-1.5 text-xs font-medium rounded-lg border border-slate-200 text-slate-600 hover:bg-slate-50">🟢 Low risk</button>
+                        </div>
+                        <div class="flex-1"></div>
+                        <input type="text" id="search-clauses" placeholder="Search clauses..."
+                               class="px-3 py-1.5 text-sm border border-slate-200 rounded-lg outline-none focus:border-emerald-500 w-64">
+                    </div>
+
+                    <!-- Clause list -->
+                    <div id="clause-list" class="space-y-3"></div>
+                </div>
+
+                <!-- ============== ANALYSIS TAB ============== -->
+                <div id="tab-analysis" class="tab-pane hidden">
+                    <div class="grid grid-cols-3 gap-6">
+                        <div class="bg-white rounded-xl border border-slate-200 p-6">
+                            <h2 class="text-base font-semibold text-slate-900 mb-4">By Risk Category</h2>
+                            <div id="category-breakdown" class="space-y-3"></div>
+                        </div>
+                        <div class="col-span-2 bg-white rounded-xl border border-slate-200 p-6">
+                            <h2 class="text-base font-semibold text-slate-900 mb-4">Top Detected Clause Types</h2>
+                            <div id="clause-types" class="grid grid-cols-2 gap-4"></div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ============== SUMMARY TAB ============== -->
+                <div id="tab-summary" class="tab-pane hidden">
+                    <div class="bg-white rounded-xl border border-slate-200 p-6">
+                        <h2 class="text-base font-semibold text-slate-900 mb-5">Summary & Recommendations</h2>
+                        <div id="summary-content" class="space-y-6"></div>
+                    </div>
+                </div>
+
+            </div>
+        </main>
+    </div>
+
+    <script src="/ui/assets/app.js"></script>
+    <script src="/ui/assets/results.js"></script>
+</body>
+</html>
