@@ -28,6 +28,13 @@ from ..utils.config import get_config, PROJECT_ROOT
 from .schemas import AnalysisResponse, ErrorResponse
 from .pipeline import analyze_document
 
+from fastapi import Request, Response, Depends
+from . import db as db_module
+from . import auth as auth_module
+from .schemas import (
+    SignupRequest, SigninRequest, AuthUserResponse,
+)
+
 
 # ============================================================
 # App setup
@@ -213,3 +220,58 @@ async def global_exception_handler(request, exc):
         status_code=500,
         content={"error": type(exc).__name__, "detail": str(exc)[:300]},
     )
+
+# ============================================================
+# Auth endpoints
+# ============================================================
+@app.on_event("startup")
+def _startup_init_db():
+    """Ensure DB tables exist on every server start."""
+    db_module.init_db()
+
+
+@app.post("/auth/signup", response_model=AuthUserResponse)
+def signup(payload: SignupRequest, response: Response):
+    """Create a new account and log the user in."""
+    email = payload.email.lower().strip()
+    if db_module.get_user_by_email(email):
+        raise HTTPException(status_code=409, detail="Email already registered")
+
+    password_hash = auth_module.hash_password(payload.password)
+    try:
+        user_id = db_module.create_user(email, payload.full_name, password_hash)
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f"Failed to create user: {e}")
+
+    token = auth_module.create_session_token(user_id, email)
+    auth_module.set_session_cookie(response, token)
+
+    user = db_module.get_user_by_id(user_id)
+    return AuthUserResponse(id=user["id"], email=user["email"], full_name=user["full_name"])
+
+
+@app.post("/auth/signin", response_model=AuthUserResponse)
+def signin(payload: SigninRequest, response: Response):
+    """Log in with email + password."""
+    email = payload.email.lower().strip()
+    user = db_module.get_user_by_email(email)
+    if not user or not auth_module.verify_password(payload.password, user["password_hash"]):
+        raise HTTPException(status_code=401, detail="Invalid email or password")
+
+    token = auth_module.create_session_token(user["id"], user["email"])
+    auth_module.set_session_cookie(response, token)
+
+    return AuthUserResponse(id=user["id"], email=user["email"], full_name=user["full_name"])
+
+
+@app.post("/auth/signout")
+def signout(response: Response):
+    """Clear the session cookie."""
+    auth_module.clear_session_cookie(response)
+    return {"ok": True}
+
+
+@app.get("/auth/me", response_model=AuthUserResponse)
+def me(user: dict = Depends(auth_module.current_user)):
+    """Return the current user's profile."""
+    return AuthUserResponse(id=user["id"], email=user["email"], full_name=user["full_name"])
